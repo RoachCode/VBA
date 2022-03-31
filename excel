@@ -1,0 +1,86 @@
+' Define Globals (I know...)
+Dim GST As Currency
+Dim PST As Currency
+Dim SST As Currency
+
+Function AssignValue(SearchString As String)
+    ' Set a few variables to re-use
+    Dim CurrentPos As Range
+    
+    ' Sets value CURRENTPOS to BEER cell
+    With Worksheets(1).Range("A1:A100")
+        Set CurrentPos = .Find(SearchString, LookIn:=xlValues)
+    End With
+    CurrentPos.Activate
+    
+    ' Selects cell to the right of BEER, assigns value if none found
+    ActiveCell.Offset(0, 1).Select
+    Do While ActiveCell.Value <> ""
+    ActiveCell.Offset(0, 1).Select
+    Loop
+End Function
+
+Private Sub CommandButton2_Click()
+    
+    ' Create string from data/txt file
+    Dim FSO As New FileSystemObject
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+    Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Group_Report.csv", ForReading)
+    Textstring = FileToRead.ReadAll
+    FileToRead.Close
+    
+    ' Removes trailing whitespace at end of document
+    Do While Right(Textstring, 1) = " "
+    Textstring = Left(Textstring, Len(Textstring) - 1)
+    Loop
+    
+    ' Define a string array, split using COMMA delimiter
+    Dim MyArray() As String
+    MyArray = Split(Textstring, ",")
+    
+    ' Iterante through bounded loop, trimming values of whitespace
+    For i = 0 To UBound(MyArray)
+    Trim (MyArray(i))
+    Next i
+    
+    ' Assign each value, using CSV values loaded into array
+    AssignValue ("BEER")
+    ActiveCell.Value = CCur(MyArray(9))
+    GST = GST + CCur(MyArray(10))
+    PST = PST + CCur(MyArray(11))
+    SST = SST + CCur(MyArray(12))
+    AssignValue ("COOLER/CIDERS")
+    ActiveCell.Value = CCur(MyArray(16))
+    GST = GST + CCur(MyArray(17))
+    PST = PST + CCur(MyArray(18))
+    SST = SST + CCur(MyArray(19))
+    AssignValue ("DEPOSITS")
+    ActiveCell.Value = CCur(MyArray(23))
+    AssignValue ("WINES")
+    ActiveCell.Value = CCur(MyArray(51))
+    GST = GST + CCur(MyArray(52))
+    PST = PST + CCur(MyArray(53))
+    SST = SST + CCur(MyArray(54))
+    AssignValue ("SPIRITS")
+    ActiveCell.Value = CCur(MyArray(37))
+    GST = GST + CCur(MyArray(38))
+    PST = PST + CCur(MyArray(39))
+    SST = SST + CCur(MyArray(40))
+    AssignValue ("FOOD/BEVERAGES")
+    ActiveCell.Value = CCur(MyArray(30))
+    GST = GST + CCur(MyArray(31))
+    PST = PST + CCur(MyArray(32))
+    SST = SST + CCur(MyArray(33))
+    AssignValue ("SUNDRIES")
+    ActiveCell.Value = CCur(MyArray(44))
+    GST = GST + CCur(MyArray(45))
+    PST = PST + CCur(MyArray(46))
+    SST = SST + CCur(MyArray(47))
+    
+    AssignValue ("GST")
+    ActiveCell.Value = GST
+    AssignValue ("PST")
+    ActiveCell.Value = PST
+    AssignValue ("SST")
+    ActiveCell.Value = SST
+End Sub
