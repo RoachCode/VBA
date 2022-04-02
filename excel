@@ -10,14 +10,16 @@ Function AssignValue(SearchString As String)
     ' Sets value CURRENTPOS to BEER cell
     With Worksheets(1).Range("A1:A100")
         Set CurrentPos = .Find(SearchString, LookIn:=xlValues)
+        If Not CurrentPos Is Nothing Then
+            CurrentPos.Activate
+            ' Selects cell to the right of BEER, assigns value if none found
+            ActiveCell.Offset(0, 1).Select
+                Do While ActiveCell.Value <> ""
+                    ActiveCell.Offset(0, 1).Select
+                Loop
+        End If
     End With
-    CurrentPos.Activate
-    
-    ' Selects cell to the right of BEER, assigns value if none found
-    ActiveCell.Offset(0, 1).Select
-    Do While ActiveCell.Value <> ""
-    ActiveCell.Offset(0, 1).Select
-    Loop
+
 End Function
 
 Private Sub CommandButton2_Click()
@@ -79,8 +81,46 @@ Private Sub CommandButton2_Click()
     
     AssignValue ("GST")
     ActiveCell.Value = GST
+    GST = 0
     AssignValue ("PST")
     ActiveCell.Value = PST
+    PST = 0
     AssignValue ("SST")
     ActiveCell.Value = SST
+    SST = 0
+    
+    ' Create string from data/txt file
+    Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Financial_Report.csv", ForReading)
+    Textstring = FileToRead.ReadAll
+    FileToRead.Close
+    
+    ' Removes trailing whitespace at end of document
+    Do While Right(Textstring, 1) = " "
+    Textstring = Left(Textstring, Len(Textstring) - 1)
+    Loop
+    
+    ' Define a string array, split using COMMA delimiter
+    Erase MyArray
+    MyArray = Split(Textstring, ",")
+    
+    ' Iterante through bounded loop, trimming values of whitespace
+    For i = 0 To UBound(MyArray)
+    Trim (MyArray(i))
+    Next i
+    
+    AssignValue ("LOYALTY PTS REDEEMED")
+    ActiveCell.Value = CCur(MyArray(83))
+    
+    ' RIGHT NOW THIS ONLY WORKS WHEN THERE IS AN AMEX PURCHASE. OTHERWISE THE WHOLE ARRAY IS OFFSET.
+    AssignValue ("AMEX")
+    ActiveCell.Value = CCur(MyArray(11))
+    
+    AssignValue ("DEBIT")
+    ActiveCell.Value = CCur(MyArray(23))
+    
+    AssignValue ("MASTERCARD")
+    ActiveCell.Value = CCur(MyArray(29))
+    
+    AssignValue ("VISA")
+    ActiveCell.Value = CCur(MyArray(35))
 End Sub
