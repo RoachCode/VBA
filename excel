@@ -1,33 +1,49 @@
 ' Define Globals (I know...)
-Dim GST As Currency
-Dim PST As Currency
-Dim SST As Currency
+Dim MyArray() As String
+Dim Offsetter As Integer
+Dim ColWid As Integer
 
-Function AssignValue(SearchString As String)
-    ' Set a few variables to re-use
+Function IsInArray(stringToBeFound As Variant, Arr As Variant) As Boolean
+    IsInArray = (UBound(Filter(Arr, stringToBeFound)) > -1)
+End Function
+
+Function SetPosition(SearchString As String)
     Dim CurrentPos As Range
-    
-    ' Sets value CURRENTPOS to BEER cell
     With Worksheets(1).Range("A1:A100")
         Set CurrentPos = .Find(SearchString, LookIn:=xlValues)
         If Not CurrentPos Is Nothing Then
             CurrentPos.Activate
             ' Selects cell to the right of BEER, assigns value if none found
-            ActiveCell.Offset(0, 1).Select
-                Do While ActiveCell.Value <> ""
-                    ActiveCell.Offset(0, 1).Select
-                Loop
+            ActiveCell.Offset(0, 2).Select
+            Do While ActiveCell.Value <> ""
+                ActiveCell.Offset(0, 1).Select
+            Loop
+        Else
+            MsgBox SearchString + " not found. Find Bradley"
         End If
     End With
+End Function
 
+Function EnterStuff(Val As String, Pos As Integer)
+    ' Assign each value, using CSV values loaded into array
+    SetPosition (Val)
+    If IsInArray(Val, MyArray) = False Then
+        Offsetter = Offsetter + ColWid
+        MsgBox (Val + " not found.")
+    Else
+        ActiveCell.Value = CCur(MyArray(Pos - Offsetter))
+    End If
 End Function
 
 Private Sub CommandButton2_Click()
+
+    ' Stops screen jitter
+    Application.ScreenUpdating = False
     
     ' Create string from data/txt file
     Dim FSO As New FileSystemObject
     Set FSO = CreateObject("Scripting.FileSystemObject")
-    Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Group_Report.csv", ForReading)
+    Set FileToRead = FSO.OpenTextFile("C:\Users\Windows\Desktop\Group_Report.csv", ForReading)
     Textstring = FileToRead.ReadAll
     FileToRead.Close
     
@@ -36,8 +52,7 @@ Private Sub CommandButton2_Click()
     Textstring = Left(Textstring, Len(Textstring) - 1)
     Loop
     
-    ' Define a string array, split using COMMA delimiter
-    Dim MyArray() As String
+    ' Split string array using COMMA delimiter
     MyArray = Split(Textstring, ",")
     
     ' Iterante through bounded loop, trimming values of whitespace
@@ -45,52 +60,28 @@ Private Sub CommandButton2_Click()
     Trim (MyArray(i))
     Next i
     
-    ' Assign each value, using CSV values loaded into array
-    AssignValue ("BEER")
-    ActiveCell.Value = CCur(MyArray(9))
-    GST = GST + CCur(MyArray(10))
-    PST = PST + CCur(MyArray(11))
-    SST = SST + CCur(MyArray(12))
-    AssignValue ("COOLER/CIDERS")
-    ActiveCell.Value = CCur(MyArray(16))
-    GST = GST + CCur(MyArray(17))
-    PST = PST + CCur(MyArray(18))
-    SST = SST + CCur(MyArray(19))
-    AssignValue ("DEPOSITS")
-    ActiveCell.Value = CCur(MyArray(23))
-    AssignValue ("WINES")
-    ActiveCell.Value = CCur(MyArray(51))
-    GST = GST + CCur(MyArray(52))
-    PST = PST + CCur(MyArray(53))
-    SST = SST + CCur(MyArray(54))
-    AssignValue ("SPIRITS")
-    ActiveCell.Value = CCur(MyArray(37))
-    GST = GST + CCur(MyArray(38))
-    PST = PST + CCur(MyArray(39))
-    SST = SST + CCur(MyArray(40))
-    AssignValue ("FOOD/BEVERAGES")
-    ActiveCell.Value = CCur(MyArray(30))
-    GST = GST + CCur(MyArray(31))
-    PST = PST + CCur(MyArray(32))
-    SST = SST + CCur(MyArray(33))
-    AssignValue ("SUNDRIES")
-    ActiveCell.Value = CCur(MyArray(44))
-    GST = GST + CCur(MyArray(45))
-    PST = PST + CCur(MyArray(46))
-    SST = SST + CCur(MyArray(47))
+    ' Checks to see if you've already clicked the button, exits sub if true
+    Dim YesterdaysBeerTotal
+    SetPosition ("BEER")
+    YesterdaysBeerTotal = ActiveCell.Offset(0, -1).Value
+    If IsInArray(YesterdaysBeerTotal, MyArray) = True And YesterdaysBeerTotal <> "" Then
+        MsgBox ("Today's totals already entered.")
+        Exit Sub
+    End If
     
-    AssignValue ("GST")
-    ActiveCell.Value = GST
-    GST = 0
-    AssignValue ("PST")
-    ActiveCell.Value = PST
-    PST = 0
-    AssignValue ("SST")
-    ActiveCell.Value = SST
-    SST = 0
+    ' Enters data. If the expected string isn't found, the array index offsets by the column width.
+    Offsetter = 0
+    ColWid = 7
+    Call EnterStuff("BEER", 9)
+    Call EnterStuff("COOLER/CIDERS", 16)
+    Call EnterStuff("DEPOSITS", 23)
+    Call EnterStuff("FOOD/BEVERAGES", 30)
+    Call EnterStuff("SPIRITS", 37)
+    Call EnterStuff("SUNDRIES", 44)
+    Call EnterStuff("WINES", 51)
     
     ' Create string from data/txt file
-    Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Financial_Report.csv", ForReading)
+    Set FileToRead = FSO.OpenTextFile("C:\Users\Windows\Desktop\Financial_Report.csv", ForReading)
     Textstring = FileToRead.ReadAll
     FileToRead.Close
     
@@ -99,7 +90,7 @@ Private Sub CommandButton2_Click()
     Textstring = Left(Textstring, Len(Textstring) - 1)
     Loop
     
-    ' Define a string array, split using COMMA delimiter
+    ' Redefine a string array, split using COMMA delimiter
     Erase MyArray
     MyArray = Split(Textstring, ",")
     
@@ -108,19 +99,16 @@ Private Sub CommandButton2_Click()
     Trim (MyArray(i))
     Next i
     
-    AssignValue ("LOYALTY PTS REDEEMED")
-    ActiveCell.Value = CCur(MyArray(83))
-    
-    ' RIGHT NOW THIS ONLY WORKS WHEN THERE IS AN AMEX PURCHASE. OTHERWISE THE WHOLE ARRAY IS OFFSET.
-    AssignValue ("AMEX")
-    ActiveCell.Value = CCur(MyArray(11))
-    
-    AssignValue ("DEBIT")
-    ActiveCell.Value = CCur(MyArray(23))
-    
-    AssignValue ("MASTERCARD")
-    ActiveCell.Value = CCur(MyArray(29))
-    
-    AssignValue ("VISA")
-    ActiveCell.Value = CCur(MyArray(35))
+    ' Enters data. If the expected string isn't found, the array index offsets by the column width.
+    Offsetter = 0
+    ColWid = 6
+    Call EnterStuff("AMEX", 11)
+    Call EnterStuff("DEBIT", 23)
+    Call EnterStuff("MASTERCARD", 29)
+    Call EnterStuff("VISA", 35)
+    Call EnterStuff("POINTS REDEEMED", 89)
+    Call EnterStuff("GST", 107)
+    Call EnterStuff("PST", 119)
+    Call EnterStuff("SST", 131)
+    Application.ScreenUpdating = True
 End Sub
