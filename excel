@@ -30,8 +30,13 @@ Function EnterStuff(Val As String, Pos As Integer)
     If IsInArray(Val, MyArray) = False Then
         Offsetter = Offsetter + ColWid
         MsgBox (Val + " not found.")
+        Pos = Pos - Offsetter
+        ActiveCell.Value = 0
     Else
-        ActiveCell.Value = CCur(MyArray(Pos - Offsetter))
+        Pos = Pos - Offsetter
+        If Pos > 0 Then
+            ActiveCell.Value = CCur(MyArray(Pos))
+        End If
     End If
 End Function
 
@@ -43,7 +48,7 @@ Private Sub CommandButton2_Click()
     ' Create string from data/txt file
     Dim FSO As New FileSystemObject
     Set FSO = CreateObject("Scripting.FileSystemObject")
-    Set FileToRead = FSO.OpenTextFile("C:\Users\Windows\Desktop\Group_Report.csv", ForReading)
+    Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Group_Report.csv", ForReading)
     Textstring = FileToRead.ReadAll
     FileToRead.Close
     
@@ -81,7 +86,7 @@ Private Sub CommandButton2_Click()
     Call EnterStuff("WINES", 51)
     
     ' Create string from data/txt file
-    Set FileToRead = FSO.OpenTextFile("C:\Users\Windows\Desktop\Financial_Report.csv", ForReading)
+    Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Financial_Report.csv", ForReading)
     Textstring = FileToRead.ReadAll
     FileToRead.Close
     
@@ -107,8 +112,9 @@ Private Sub CommandButton2_Click()
     Call EnterStuff("MASTERCARD", 29)
     Call EnterStuff("VISA", 35)
     Call EnterStuff("POINTS REDEEMED", 89)
-    Call EnterStuff("GST", 107)
-    Call EnterStuff("PST", 119)
-    Call EnterStuff("SST", 131)
+    Call EnterStuff("RETURNED ITEMS", 0)
+    Call EnterStuff("GST", 101)
+    Call EnterStuff("PST", 113)
+    Call EnterStuff("SST", 125)
     Application.ScreenUpdating = True
 End Sub
