@@ -19,7 +19,7 @@ Function SetPosition(SearchString As String)
                 ActiveCell.Offset(0, 1).Select
             Loop
         Else
-            MsgBox SearchString + " not found. Find Bradley"
+            ' MsgBox SearchString + " not found in current Excel document."
         End If
     End With
 End Function
@@ -29,7 +29,7 @@ Function EnterStuff(Val As String, Pos As Integer)
     SetPosition (Val)
     If IsInArray(Val, MyArray) = False Then
         Offsetter = Offsetter + ColWid
-        MsgBox (Val + " not found.")
+        MsgBox (Val + " not found. Current offset: " + CStr(Offsetter))
         Pos = Pos - Offsetter
         ActiveCell.Value = 0
     Else
@@ -111,10 +111,20 @@ Private Sub CommandButton2_Click()
     Call EnterStuff("DEBIT", 23)
     Call EnterStuff("MASTERCARD", 29)
     Call EnterStuff("VISA", 35)
-    Call EnterStuff("POINTS REDEEMED", 89)
-    Call EnterStuff("RETURNED ITEMS", 0)
-    Call EnterStuff("GST", 101)
-    Call EnterStuff("PST", 113)
-    Call EnterStuff("SST", 125)
+    Call EnterStuff("ERROR CORRECT", 0)
+    Call EnterStuff("PAID IN/OUT", 0)
+    Call EnterStuff("VOID", 0)
+    Call EnterStuff("VOID SALE", 0)
+    Call EnterStuff("% DISCOUNT", 0)
+    Call EnterStuff("WAREHOUSE DISCOUNT", 0)
+    Call EnterStuff("$ DISCOUNT", 0)
+    Call EnterStuff("POINTS REDEEMED", 101)
+    Call EnterStuff("PRICE MODIFY", 0)
+    Call EnterStuff("GIFT CARD", 0)
+    Call EnterStuff("REFUND", 0)
+    Call EnterStuff("GIFT CARDS", 0)
+    Call EnterStuff("GST", 131)
+    Call EnterStuff("PST", 143)
+    Call EnterStuff("SST", 155)
     Application.ScreenUpdating = True
 End Sub
