@@ -2,6 +2,7 @@
 Dim MyArray() As String
 Dim Offsetter As Integer
 Dim ColWid As Integer
+Dim FirstArrayBool As Boolean
 
 Function IsInArray(stringToBeFound As Variant, Arr As Variant) As Boolean
     IsInArray = (UBound(Filter(Arr, stringToBeFound)) > -1)
@@ -9,29 +10,49 @@ End Function
 
 Function SetPosition(SearchString As String)
     Dim CurrentPos As Range
-    With Worksheets(1).Range("A1:A100")
-        Set CurrentPos = .Find(SearchString, LookIn:=xlValues)
-        If Not CurrentPos Is Nothing Then
-            CurrentPos.Activate
-            ' Selects cell to the right of BEER, assigns value if none found
-            ActiveCell.Offset(0, 2).Select
-            Do While ActiveCell.Value <> ""
-                ActiveCell.Offset(0, 1).Select
-            Loop
-        Else
-            ' MsgBox SearchString + " not found in current Excel document."
-        End If
-    End With
+    If FirstArrayBool = True Then
+        With Worksheets(1).Range("A1:A20")
+            Set CurrentPos = .Find(SearchString, LookIn:=xlValues)
+            If Not CurrentPos Is Nothing Then
+                CurrentPos.Activate
+                ' Selects cell to the right of BEER, assigns value if none found
+                ActiveCell.Offset(0, 2).Select
+                Do While ActiveCell.Value <> ""
+                    ActiveCell.Offset(0, 1).Select
+                Loop
+            Else
+                MsgBox SearchString + " not found in current Excel document. Error"
+            End If
+        End With
+    ElseIf FirstArrayBool = False Then
+        With Worksheets(1).Range("A20:A100")
+            Set CurrentPos = .Find(SearchString, LookIn:=xlValues)
+            If Not CurrentPos Is Nothing Then
+                CurrentPos.Activate
+                ' Selects cell to the right of BEER, assigns value if none found
+                ActiveCell.Offset(0, 2).Select
+                Do While ActiveCell.Value <> ""
+                    ActiveCell.Offset(0, 1).Select
+                Loop
+            Else
+                MsgBox SearchString + " not found in current Excel document. Error"
+            End If
+        End With
+    End If
 End Function
 
 Function EnterStuff(Val As String, Pos As Integer)
     ' Assign each value, using CSV values loaded into array
-    SetPosition (Val)
+    If Pos <> 0 Then
+        SetPosition (Val)
+    End If
     If IsInArray(Val, MyArray) = False Then
         Offsetter = Offsetter + ColWid
-        MsgBox (Val + " not found. Current offset: " + CStr(Offsetter))
+        ' MsgBox (Val + " not found. Current offset: " + CStr(Offsetter))
         Pos = Pos - Offsetter
-        ActiveCell.Value = 0
+        If ActiveCell.Value = "" Then
+            ActiveCell.Value = 0
+        End If
     Else
         Pos = Pos - Offsetter
         If Pos > 0 Then
@@ -49,16 +70,17 @@ Private Sub CommandButton2_Click()
     Dim FSO As New FileSystemObject
     Set FSO = CreateObject("Scripting.FileSystemObject")
     Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Group_Report.csv", ForReading)
-    Textstring = FileToRead.ReadAll
+    TextString = FileToRead.ReadAll
     FileToRead.Close
     
     ' Removes trailing whitespace at end of document
-    Do While Right(Textstring, 1) = " "
-    Textstring = Left(Textstring, Len(Textstring) - 1)
+    Do While Right(TextString, 1) = " "
+    TextString = Left(TextString, Len(TextString) - 1)
     Loop
     
     ' Split string array using COMMA delimiter
-    MyArray = Split(Textstring, ",")
+    FirstArrayBool = True
+    MyArray = Split(TextString, ",")
     
     ' Iterante through bounded loop, trimming values of whitespace
     For i = 0 To UBound(MyArray)
@@ -85,19 +107,32 @@ Private Sub CommandButton2_Click()
     Call EnterStuff("SUNDRIES", 44)
     Call EnterStuff("WINES", 51)
     
+    ' I used to pull from Financial_Report but the tax values don't match. Nothing matches. SST is not calculated
+    ' At 10%. I believe there are floating point rounding errors. I recommend splitting currency into dollars and cents
+    ' And treating both as seperate integers. They can be recombined after the math is done. This removes all errors.
+    ' For now I will stick with the values we have been using from Group_Report. This warrents a further look!
+    SetPosition ("GST")
+    ActiveCell.Value = CCur(MyArray(10)) + CCur(MyArray(17)) + CCur(MyArray(24)) + CCur(MyArray(31)) + CCur(MyArray(38)) + CCur(MyArray(45)) + CCur(MyArray(52))
+    SetPosition ("PST")
+    ActiveCell.Value = CCur(MyArray(11)) + CCur(MyArray(18)) + CCur(MyArray(25)) + CCur(MyArray(32)) + CCur(MyArray(39)) + CCur(MyArray(46)) + CCur(MyArray(53))
+    SetPosition ("SST")
+    ActiveCell.Value = CCur(MyArray(12)) + CCur(MyArray(19)) + CCur(MyArray(26)) + CCur(MyArray(33)) + CCur(MyArray(40)) + CCur(MyArray(47)) + CCur(MyArray(54))
+    
     ' Create string from data/txt file
     Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Financial_Report.csv", ForReading)
-    Textstring = FileToRead.ReadAll
+    TextString = FileToRead.ReadAll
     FileToRead.Close
     
     ' Removes trailing whitespace at end of document
-    Do While Right(Textstring, 1) = " "
-    Textstring = Left(Textstring, Len(Textstring) - 1)
+    Do While Right(TextString, 1) = " "
+    TextString = Left(TextString, Len(TextString) - 1)
     Loop
     
     ' Redefine a string array, split using COMMA delimiter
     Erase MyArray
-    MyArray = Split(Textstring, ",")
+    FirstArrayBool = False
+    ' MsgBox (TextString)
+    MyArray = Split(TextString, ",")
     
     ' Iterante through bounded loop, trimming values of whitespace
     For i = 0 To UBound(MyArray)
@@ -113,18 +148,21 @@ Private Sub CommandButton2_Click()
     Call EnterStuff("VISA", 35)
     Call EnterStuff("ERROR CORRECT", 0)
     Call EnterStuff("PAID IN/OUT", 0)
-    Call EnterStuff("VOID", 0)
     Call EnterStuff("VOID SALE", 0)
     Call EnterStuff("% DISCOUNT", 0)
     Call EnterStuff("WAREHOUSE DISCOUNT", 0)
     Call EnterStuff("$ DISCOUNT", 0)
     Call EnterStuff("POINTS REDEEMED", 101)
     Call EnterStuff("PRICE MODIFY", 0)
-    Call EnterStuff("GIFT CARD", 0)
+    FirstArrayBool = True
+    Call EnterStuff("GIFT CARD", 113)
+    FirstArrayBool = False
     Call EnterStuff("REFUND", 0)
-    Call EnterStuff("GIFT CARDS", 0)
-    Call EnterStuff("GST", 131)
-    Call EnterStuff("PST", 143)
-    Call EnterStuff("SST", 155)
+    Call EnterStuff("MPS GIFT CARD", 125)
+    FirstArrayBool = True
+    ' Call EnterStuff("GST", 131)
+    ' Call EnterStuff("PST", 143)
+    ' Call EnterStuff("SST", 155)
+    
     Application.ScreenUpdating = True
 End Sub
