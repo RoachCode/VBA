@@ -4,7 +4,7 @@ Dim mainWorkbook As Workbook
 Dim todayColumn As Integer
 
 ' Sets the active cell. Moves to the first empty cell in the row of the string provided if flag set
-Function setPosition(searchString As String, inRange As String, moveToFirstEmptyColumn As Boolean)
+Function setPosition(searchString As String, inRange As String, moveToFirstEmptyColumn As Boolean) As Boolean
     Dim currentPos As Range
     With ActiveWorkbook.Worksheets(1).Range(inRange)
         Set currentPos = .Find(searchString, LookIn:=xlValues, LookAt:=xlWhole, MatchCase:=True)
@@ -22,22 +22,26 @@ Function setPosition(searchString As String, inRange As String, moveToFirstEmpty
                     Loop
                 End If
             End If
+            setPosition = True
         Else
-            MsgBox searchString + " not found in current Excel document. Try again."
+            setPosition = False
+            MsgBox searchString + " not found in current Excel document."
         End If
     End With
 End Function
 
 Function openWorkbooks()
     Set mainWorkbook = ActiveWorkbook
-    Set summaryWorkbook = Workbooks.Open("C:\Users\Windows\Desktop\Summary.xlsx", True, True)
+    Set summaryWorkbook = Workbooks.Open("C:\Users\Manager\Desktop\Summary.xlsx", True, True)
     mainWorkbook.Activate
 End Function
 
 Function getValue(searchString As String, inRange As String)
-    Call setPosition(searchString, inRange, False)
-    ActiveCell.Offset(0, 1).Select
-    getValue = ActiveCell.value
+    Dim doesExist As Boolean: doesExist = setPosition(searchString, inRange, False)
+    If doesExist Then
+        ActiveCell.Offset(0, 1).Select
+        getValue = ActiveCell.value
+    End If
 End Function
 
 Function setValue(searchString As String, inRange As String, value As String)
@@ -65,7 +69,7 @@ Private Sub Button()
     Dim foodBev As String: foodBev = getValue("FOOD", "A1:A40")
     Dim misc As String: misc = getValue("MISC", "A1:A40")
     Dim deposits As String: deposits = getValue("DEPOSIT", "A1:A40")
-' Dim giftCardsSold As String: giftCardsSold = getValue("", "A1:A40")
+    Dim giftCardsSold As String: giftCardsSold = getValue("All Gift Cards Sold", "A1:A40")
     Dim GST As String: GST = getValue("GST 5%", "A1:A40")
     Dim PST As String: PST = getValue("PST 7%", "A1:A40")
     Dim SST As String: SST = getValue("LIQ 10%", "A1:A40")
@@ -94,7 +98,7 @@ Private Sub Button()
     Call setValue("FOOD/ BEVERAGES", "A1:A55", foodBev)
     Call setValue("MISC", "A1:A55", misc)
     Call setValue("DEPOSITS", "A1:A55", deposits)
-' Call setValue("GIFT CARDS", "A1:A20", giftCardsSold)
+    Call setValue("GIFT CARDS", "A1:A20", giftCardsSold)
     Call setValue("GST", "A1:A55", GST)
     Call setValue("PST", "A1:A55", PST)
     Call setValue("SST", "A1:A55", SST)
