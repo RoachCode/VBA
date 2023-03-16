@@ -1,168 +1,111 @@
-' Define Globals (I know...)
-Dim MyArray() As String
-Dim Offsetter As Integer
-Dim ColWid As Integer
-Dim FirstArrayBool As Boolean
+' Globals
+Dim summaryWorkbook As Workbook
+Dim mainWorkbook As Workbook
+Dim todayColumn As Integer
 
-Function IsInArray(stringToBeFound As Variant, Arr As Variant) As Boolean
-    IsInArray = (UBound(Filter(Arr, stringToBeFound)) > -1)
-End Function
-
-Function SetPosition(SearchString As String)
-    Dim CurrentPos As Range
-    If FirstArrayBool = True Then
-        With Worksheets(1).Range("A1:A20")
-            Set CurrentPos = .Find(SearchString, LookIn:=xlValues)
-            If Not CurrentPos Is Nothing Then
-                CurrentPos.Activate
-                ' Selects cell to the right of BEER, assigns value if none found
+' Sets the active cell. Moves to the first empty cell in the row of the string provided if flag set
+Function setPosition(searchString As String, inRange As String, moveToFirstEmptyColumn As Boolean)
+    Dim currentPos As Range
+    With ActiveWorkbook.Worksheets(1).Range(inRange)
+        Set currentPos = .Find(searchString, LookIn:=xlValues, LookAt:=xlWhole, MatchCase:=True)
+        If Not currentPos Is Nothing Then
+            currentPos.Activate
+            If moveToFirstEmptyColumn Then
                 ActiveCell.Offset(0, 2).Select
-                Do While ActiveCell.Value <> ""
-                    ActiveCell.Offset(0, 1).Select
-                Loop
-            Else
-                MsgBox SearchString + " not found in current Excel document. Error"
+                If todayColumn = 0 Then
+                    Do While ActiveCell.value <> ""
+                        ActiveCell.Offset(0, 1).Select
+                    Loop
+                Else
+                    Do While ActiveCell.Column < todayColumn
+                        ActiveCell.Offset(0, 1).Select
+                    Loop
+                End If
             End If
-        End With
-    ElseIf FirstArrayBool = False Then
-        With Worksheets(1).Range("A20:A100")
-            Set CurrentPos = .Find(SearchString, LookIn:=xlValues)
-            If Not CurrentPos Is Nothing Then
-                CurrentPos.Activate
-                ' Selects cell to the right of BEER, assigns value if none found
-                ActiveCell.Offset(0, 2).Select
-                Do While ActiveCell.Value <> ""
-                    ActiveCell.Offset(0, 1).Select
-                Loop
-            Else
-                MsgBox SearchString + " not found in current Excel document. Error"
-            End If
-        End With
-    End If
+        Else
+            MsgBox searchString + " not found in current Excel document. Try again."
+        End If
+    End With
 End Function
 
-Function EnterStuff(Val As String, Pos As Integer)
-    ' Assign each value, using CSV values loaded into array
-    If Pos <> 0 Then
-        SetPosition (Val)
-    End If
-    If IsInArray(Val, MyArray) = False Then
-        Offsetter = Offsetter + ColWid
-        ' MsgBox (Val + " not found. Current offset: " + CStr(Offsetter))
-        Pos = Pos - Offsetter
-        If ActiveCell.Value = "" Then
-            ActiveCell.Value = 0
-        End If
-    Else
-        Pos = Pos - Offsetter
-        If Pos > 0 Then
-            ActiveCell.Value = CCur(MyArray(Pos))
-        End If
-    End If
+Function openWorkbooks()
+    Set mainWorkbook = ActiveWorkbook
+    Set summaryWorkbook = Workbooks.Open("C:\Users\Windows\Desktop\Summary.xlsx", True, True)
+    mainWorkbook.Activate
 End Function
 
-Private Sub CommandButton2_Click()
+Function getValue(searchString As String, inRange As String)
+    Call setPosition(searchString, inRange, False)
+    ActiveCell.Offset(0, 1).Select
+    getValue = ActiveCell.value
+End Function
 
-    ' Stops screen jitter
+Function setValue(searchString As String, inRange As String, value As String)
+    Call setPosition(searchString, inRange, True)
+    ActiveCell.value = value
+End Function
+
+Private Sub Button()
+    ' Stops screen jitter and slow speed
     Application.ScreenUpdating = False
+
+    ' Open Workbooks
+    Call openWorkbooks
     
-    ' Create string from data/txt file
-    Dim FSO As New FileSystemObject
-    Set FSO = CreateObject("Scripting.FileSystemObject")
-    Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Group_Report.csv", ForReading)
-    TextString = FileToRead.ReadAll
-    FileToRead.Close
+    ' Activate summary file
+    summaryWorkbook.Activate
     
-    ' Removes trailing whitespace at end of document
-    Do While Right(TextString, 1) = " "
-    TextString = Left(TextString, Len(TextString) - 1)
-    Loop
+    ' Define variables and load data
+    ' Revenue
+    Dim beer As String: beer = getValue("BEER", "A1:A40")
+    Dim coolerCider As String: coolerCider = getValue("COOL/CIDER", "A1:A40")
+    Dim wines As String: wines = getValue("WINE", "A1:A40")
+    Dim returns As String: returns = getValue("RETURNS", "A1:A40")
+    Dim spirits As String: spirits = getValue("SPIRITS", "A1:A40")
+    Dim foodBev As String: foodBev = getValue("FOOD", "A1:A40")
+    Dim misc As String: misc = getValue("MISC", "A1:A40")
+    Dim deposits As String: deposits = getValue("DEPOSIT", "A1:A40")
+' Dim giftCardsSold As String: giftCardsSold = getValue("", "A1:A40")
+    Dim GST As String: GST = getValue("GST 5%", "A1:A40")
+    Dim PST As String: PST = getValue("PST 7%", "A1:A40")
+    Dim SST As String: SST = getValue("LIQ 10%", "A1:A40")
+    'Paidouts
+    Dim pointsRedeem As String: pointsRedeem = getValue("Rewards", "A1:A40")
+    'Payments
+    Dim amex As String: amex = getValue("AMEX", "A1:A40")
+    Dim debit As String: debit = getValue("Debit", "A1:A40")
+    Dim mc As String: mc = getValue("Master Card", "A1:A40")
+    Dim visa As String: visa = getValue("Visa", "A1:A40")
+    Dim giftCardsRedeemed As String: giftCardsRedeemed = getValue("All Gift Cards", "A1:A40")
+    Dim refunds As String: refunds = getValue("Refund", "A1:A40")
     
-    ' Split string array using COMMA delimiter
-    FirstArrayBool = True
-    MyArray = Split(TextString, ",")
+    ' Close summary workbook and activate main workbook
+    summaryWorkbook.Close
+    mainWorkbook.Activate
     
-    ' Iterante through bounded loop, trimming values of whitespace
-    For i = 0 To UBound(MyArray)
-    Trim (MyArray(i))
-    Next i
-    
-    ' Checks to see if you've already clicked the button, exits sub if true
-    Dim YesterdaysBeerTotal
-    SetPosition ("BEER")
-    YesterdaysBeerTotal = ActiveCell.Offset(0, -1).Value
-    If IsInArray(YesterdaysBeerTotal, MyArray) = True And YesterdaysBeerTotal <> "" Then
-        MsgBox ("Today's totals already entered.")
-        Exit Sub
-    End If
-    
-    ' Enters data. If the expected string isn't found, the array index offsets by the column width.
-    Offsetter = 0
-    ColWid = 7
-    Call EnterStuff("BEER", 9)
-    Call EnterStuff("COOLER/CIDERS", 16)
-    Call EnterStuff("DEPOSITS", 23)
-    Call EnterStuff("FOOD/BEVERAGES", 30)
-    Call EnterStuff("SPIRITS", 37)
-    Call EnterStuff("SUNDRIES", 44)
-    Call EnterStuff("WINES", 51)
-    
-    ' I used to pull from Financial_Report but the tax values don't match. Nothing matches. SST is not calculated
-    ' At 10%. I believe there are floating point rounding errors. I recommend splitting currency into dollars and cents
-    ' And treating both as seperate integers. They can be recombined after the math is done. This removes all errors.
-    ' For now I will stick with the values we have been using from Group_Report. This warrents a further look!
-    SetPosition ("GST")
-    ActiveCell.Value = CCur(MyArray(10)) + CCur(MyArray(17)) + CCur(MyArray(24)) + CCur(MyArray(31)) + CCur(MyArray(38)) + CCur(MyArray(45)) + CCur(MyArray(52))
-    SetPosition ("PST")
-    ActiveCell.Value = CCur(MyArray(11)) + CCur(MyArray(18)) + CCur(MyArray(25)) + CCur(MyArray(32)) + CCur(MyArray(39)) + CCur(MyArray(46)) + CCur(MyArray(53))
-    SetPosition ("SST")
-    ActiveCell.Value = CCur(MyArray(12)) + CCur(MyArray(19)) + CCur(MyArray(26)) + CCur(MyArray(33)) + CCur(MyArray(40)) + CCur(MyArray(47)) + CCur(MyArray(54))
-    
-    ' Create string from data/txt file
-    Set FileToRead = FSO.OpenTextFile("C:\Users\Manager\Documents\Financial_Report.csv", ForReading)
-    TextString = FileToRead.ReadAll
-    FileToRead.Close
-    
-    ' Removes trailing whitespace at end of document
-    Do While Right(TextString, 1) = " "
-    TextString = Left(TextString, Len(TextString) - 1)
-    Loop
-    
-    ' Redefine a string array, split using COMMA delimiter
-    Erase MyArray
-    FirstArrayBool = False
-    ' MsgBox (TextString)
-    MyArray = Split(TextString, ",")
-    
-    ' Iterante through bounded loop, trimming values of whitespace
-    For i = 0 To UBound(MyArray)
-    Trim (MyArray(i))
-    Next i
-    
-    ' Enters data. If the expected string isn't found, the array index offsets by the column width.
-    Offsetter = 0
-    ColWid = 6
-    Call EnterStuff("AMEX", 11)
-    Call EnterStuff("DEBIT", 23)
-    Call EnterStuff("MASTERCARD", 29)
-    Call EnterStuff("VISA", 35)
-    Call EnterStuff("ERROR CORRECT", 0)
-    Call EnterStuff("PAID IN/OUT", 0)
-    Call EnterStuff("VOID SALE", 0)
-    Call EnterStuff("% DISCOUNT", 0)
-    Call EnterStuff("WAREHOUSE DISCOUNT", 0)
-    Call EnterStuff("$ DISCOUNT", 0)
-    Call EnterStuff("POINTS REDEEMED", 101)
-    Call EnterStuff("PRICE MODIFY", 0)
-    FirstArrayBool = True
-    Call EnterStuff("GIFT CARD", 113)
-    FirstArrayBool = False
-    Call EnterStuff("REFUND", 0)
-    Call EnterStuff("MPS GIFT CARD", 125)
-    FirstArrayBool = True
-    ' Call EnterStuff("GST", 131)
-    ' Call EnterStuff("PST", 143)
-    ' Call EnterStuff("SST", 155)
-    
+    ' Set values to main workbook
+    Call setValue("BEER", "A1:A55", beer)
+    ' BEER value always exists; therefore it sets the column
+    todayColumn = ActiveCell.Column
+    Call setValue("COOLERCIDER", "A1:A55", coolerCider)
+    Call setValue("WINES", "A1:A55", wines)
+    Call setValue("RETURNS- ENTER AS NEG", "A1:A55", returns)
+    Call setValue("SPIRITS", "A1:A55", spirits)
+    Call setValue("FOOD/ BEVERAGES", "A1:A55", foodBev)
+    Call setValue("MISC", "A1:A55", misc)
+    Call setValue("DEPOSITS", "A1:A55", deposits)
+' Call setValue("GIFT CARDS", "A1:A20", giftCardsSold)
+    Call setValue("GST", "A1:A55", GST)
+    Call setValue("PST", "A1:A55", PST)
+    Call setValue("SST", "A1:A55", SST)
+    Call setValue("POINTS REDEEM", "A1:A55", pointsRedeem)
+    Call setValue("AMEX", "A1:A55", amex)
+    Call setValue("DEBIT", "A1:A55", debit)
+    Call setValue("M/C", "A1:A55", mc)
+    Call setValue("VISA", "A1:A55", visa)
+    Call setValue("GIFT CARDS", "A30:A55", giftCardsRedeemed)
+    Call setValue("REFUNDS", "A1:A55", refunds)
+
+' Reset state
     Application.ScreenUpdating = True
 End Sub
