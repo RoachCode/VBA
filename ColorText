@@ -1,5 +1,5 @@
 ' This macro was created for the staff at Costa Canna.
-' If you have questions please email roachcode@gmail.com
+' If you have questions please email Bradley at roachcode@gmail.com
 Private Sub Worksheet_Change(ByVal Target As Range)
 
     ' Define Costa Canna Colours as RGB values.
@@ -15,6 +15,12 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     Dim CostaDarkBlue As Long:      CostaDarkBlue = RGB(0, 32, 96)
     Dim CostaPurple As Long:        CostaPurple = RGB(112, 48, 160)
     
+    ' Correct a few common formatting mistakes.
+    Dim SlashPos: SlashPos = InStr(UCase(Target.Text), "\")
+    If SlashPos > 0 Then
+        Target = Replace(Target, "\", "/")
+    End If
+    
     ' Apply the colouring rules. Add 'True' to italicize.
     ColorText Target, "indica", CostaPurple
     ColorText Target, "i/d", CostaPurple
@@ -29,7 +35,11 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     ColorText Target, "blunt", CostaDarkRed, True
     ColorText Target, "blunts", CostaDarkRed, True
     ColorText Target, "live resin", CostaDarkRed, True
-   
+    
+    ' Exceptions
+    ColorText Target, "20% sativa", CostaBlack
+    ColorText Target, "20% indica", CostaBlack
+
 End Sub
 
 ' NOTE: You don't ever have to go down here. Colours and Text are adjusted above.
@@ -38,12 +48,6 @@ Private Sub ColorText(Target As Range, SearchString As String, Colour As Long, O
     ' Define the position of the found text.
     Dim MyPos
     Dim Offset As Integer
-    
-    ' Correct a few common formatting mistakes.
-    MyPos = InStr(UCase(Target.Text), "\")
-    If MyPos > 0 Then
-        Target = Replace(Target, "\", "/")
-    End If
     
     ' Continue by returning to the first found string.
     Offset = 1
@@ -58,11 +62,11 @@ Private Sub ColorText(Target As Range, SearchString As String, Colour As Long, O
             .Color = Colour
         End With
         
-        ' If a dollar sign is found, use logic to colour the price accordingly.
+        ' If a dollar sign is found, colour the entire price accordingly.
         If SearchString = "$" Then
-            Dim ClosePos
-            ClosePos = InStr(Target.Text, ".") + 2
-            With Target.Characters(Start:=MyPos, Length:=ClosePos - MyPos + 1).Font
+            Dim MoneyClosePos
+            MoneyClosePos = InStr(Target.Text, ".") + 2
+            With Target.Characters(Start:=MyPos, Length:=MoneyClosePos - MyPos + 1).Font
                 .Color = Colour
             End With
         End If
@@ -70,8 +74,9 @@ Private Sub ColorText(Target As Range, SearchString As String, Colour As Long, O
         ' Set new offset and attempt to loop.
         Offset = MyPos + 1
         MyPos = InStr(Offset, UCase(Target.Text), UCase(SearchString))
-        
+
     Loop
 End Sub
+
 ' TODO: Create an escape clause to skip colourizing for certain occurences.
 ' For now, just turn off macros when full control is needed.
