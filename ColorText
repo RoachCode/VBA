@@ -1,0 +1,77 @@
+' This macro was created for the staff at Costa Canna.
+' If you have questions please email roachcode@gmail.com
+Private Sub Worksheet_Change(ByVal Target As Range)
+
+    ' Define Costa Canna Colours as RGB values.
+    Dim CostaBlack As Long:         CostaBlack = RGB(0, 0, 0)
+    Dim CostaDarkRed As Long:       CostaDarkRed = RGB(192, 0, 0)
+    Dim CostaRed As Long:           CostaRed = RGB(255, 0, 0)
+    Dim CostaOrange As Long:        CostaOrange = RGB(255, 192, 0)
+    Dim CostaYellow As Long:        CostaYellow = RGB(255, 255, 0)
+    Dim CostaLightGreen As Long:    CostaLightGreen = RGB(146, 208, 80)
+    Dim CostaGreen As Long:         CostaGreen = RGB(0, 176, 80)
+    Dim CostaLightBlue As Long:     CostaLightBlue = RGB(0, 176, 240)
+    Dim CostaBlue As Long:          CostaBlue = RGB(0, 112, 192)
+    Dim CostaDarkBlue As Long:      CostaDarkBlue = RGB(0, 32, 96)
+    Dim CostaPurple As Long:        CostaPurple = RGB(112, 48, 160)
+    
+    ' Apply the colouring rules. Add 'True' to italicize.
+    ColorText Target, "indica", CostaPurple
+    ColorText Target, "i/d", CostaPurple
+    ColorText Target, "sativa", CostaOrange
+    ColorText Target, "s/d", CostaOrange
+    ColorText Target, "hybrid", CostaGreen
+    ColorText Target, "cbd", CostaLightBlue
+    ColorText Target, "cbn", CostaLightBlue
+    ColorText Target, "cbg", CostaLightBlue
+    ColorText Target, "cbc", CostaLightBlue
+    ColorText Target, "$", CostaRed
+    ColorText Target, "blunt", CostaDarkRed, True
+    ColorText Target, "blunts", CostaDarkRed, True
+    ColorText Target, "live resin", CostaDarkRed, True
+   
+End Sub
+
+' NOTE: You don't ever have to go down here. Colours and Text are adjusted above.
+Private Sub ColorText(Target As Range, SearchString As String, Colour As Long, Optional Italicize As Boolean = False)
+
+    ' Define the position of the found text.
+    Dim MyPos
+    Dim Offset As Integer
+    
+    ' Correct a few common formatting mistakes.
+    MyPos = InStr(UCase(Target.Text), "\")
+    If MyPos > 0 Then
+        Target = Replace(Target, "\", "/")
+    End If
+    
+    ' Continue by returning to the first found string.
+    Offset = 1
+    MyPos = InStr(Offset, UCase(Target.Text), UCase(SearchString))
+    
+    ' Loop through all occurences.
+    Do While MyPos > 0
+
+        ' Redefine the colour of the specified text.
+        With Target.Characters(Start:=MyPos, Length:=Len(SearchString)).Font
+            .Italic = Italicize
+            .Color = Colour
+        End With
+        
+        ' If a dollar sign is found, use logic to colour the price accordingly.
+        If SearchString = "$" Then
+            Dim ClosePos
+            ClosePos = InStr(Target.Text, ".") + 2
+            With Target.Characters(Start:=MyPos, Length:=ClosePos - MyPos + 1).Font
+                .Color = Colour
+            End With
+        End If
+        
+        ' Set new offset and attempt to loop.
+        Offset = MyPos + 1
+        MyPos = InStr(Offset, UCase(Target.Text), UCase(SearchString))
+        
+    Loop
+End Sub
+' TODO: Create an escape clause to skip colourizing for certain occurences.
+' For now, just turn off macros when full control is needed.
